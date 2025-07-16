@@ -1,0 +1,35 @@
+import matplotlib
+matplotlib.use('Agg')  # Use non-GUI backend for environments without a display
+
+import numpy as np
+import matplotlib.pyplot as plt
+
+# Load your point cloud
+points = np.load(r'D:\Mphil\Programming\EfficientPointMed\output\point_cloud.npy')
+
+# Unpack columns for clarity
+y, x, grad, label = points[:,0], points[:,1], points[:,2], points[:,3]
+
+# Plot x vs y, colored by grad
+plt.figure(figsize=(8,6))
+sc = plt.scatter(y, x, c=grad, cmap='gray', s=1)
+plt.colorbar(sc, label='Gradient Magnitude')
+plt.xlabel('Y (column)')
+plt.ylabel('X (row)')
+plt.title('Point Cloud colored by Gradient Magnitude')
+plt.gca().invert_yaxis()
+plt.tight_layout()
+plt.savefig(r'D:\Mphil\Programming\EfficientPointMed\output\slice\pointcloud_grad.png', dpi=300)
+plt.close()
+
+# Plot x vs y, colored by label
+plt.figure(figsize=(8,6))
+sc = plt.scatter(y, x, c=label, cmap='viridis', s=1)  # tab10 works well for integer labels
+plt.colorbar(sc, label='Mask Label')
+plt.xlabel('Y (column)')
+plt.ylabel('X (row)')
+plt.title('Point Cloud colored by Mask Label')
+plt.gca().invert_yaxis()
+plt.tight_layout()
+plt.savefig(r'D:\Mphil\Programming\EfficientPointMed\output\slice\pointcloud_label.png', dpi=300)
+plt.close()

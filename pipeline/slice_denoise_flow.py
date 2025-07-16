@@ -97,11 +97,11 @@ def pointcloud_formulation(
 if __name__ == "__main__":
     denoised_img, mask_2d = slice_denoising(
         slice_index=150,
-        cbct_path=r"D:\Mphil\Programming\2DtoPointcloud_v2\dataset\P1-20250324T100522Z-001\P1\data.npy",
-        mask_path=r"D:\Mphil\Programming\2DtoPointcloud_v2\dataset\P1-20250324T100522Z-001\P1\gt_alpha.npy"
+        cbct_path=r"D:\Mphil\Programming\EfficientPointMed\dataset\P1-20250324T100522Z-001\P1\data.npy",
+        mask_path=r"D:\Mphil\Programming\EfficientPointMed\dataset\P1-20250324T100522Z-001\P1\gt_alpha.npy"
     )
     pointcloud_formulation(
         denoised_img, mask_2d,
-        output_path_ply=r"D:\Mphil\Programming\2DtoPointcloud_v2\output\point_cloud_data_with_labels.ply",
-        output_path_npy=r"D:\Mphil\Programming\2DtoPointcloud_v2\output\point_cloud.npy"
+        output_path_ply=r"D:\Mphil\Programming\EfficientPointMed\output\point_cloud.ply",
+        output_path_npy=r"D:\Mphil\Programming\EfficientPointMed\output\point_cloud.npy"
     )
