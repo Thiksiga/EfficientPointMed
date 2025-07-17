@@ -264,6 +264,32 @@ class Denoise:
         denoised_log_image = pywt.waverec2(coeffs_denoised, wavelet=wavelet)
         return denoised_log_image
 
+    @staticmethod
+    def three_d_adaptive_wiener_filter(volume, noise_var, window_size=5, axis=1):
+        """
+        Apply Wiener filter to a 3D volume slice-by-slice along the specified axis.
+
+        Parameters:
+            volume (np.ndarray): Input 3D array.
+            noise_var (float): Estimated noise variance.
+            window_size (int): Window size for filtering.
+            axis (int): Axis along which to apply the filter (default 1).
+        Returns:
+            np.ndarray: Wiener-filtered 3D array.
+        """
+        from scipy.signal import wiener
+        epsilon = 1e-8
+        safe_noise_var = noise_var + epsilon
+        filtered = np.empty_like(volume, dtype=np.float64)
+        # Move the axis to the middle for easy iteration
+        volume = np.moveaxis(volume, axis, 0)
+        filtered = np.empty_like(volume, dtype=np.float64)
+        for i in range(volume.shape[0]):
+            filtered[i] = wiener(volume[i], mysize=window_size, noise=safe_noise_var)
+        # Move axis back to original
+        filtered = np.moveaxis(filtered, 0, axis)
+        return filtered.astype(volume.dtype)
+
     # Function to preprocess neighbors (small_window x small_window) for each pixel
     @staticmethod
     @jit(nopython=True)
