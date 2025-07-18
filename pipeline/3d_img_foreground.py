@@ -12,8 +12,13 @@ import cv2
 import matplotlib
 matplotlib.use('Agg')  # Use non-GUI backend for environments without a display
 import matplotlib.pyplot as plt
+import logging
 
-def three_d_denoising(cbct_path: str, mask_path: str, hu_min: int = -1000, hu_max: int = 3000):
+# Set up logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logger = logging.getLogger(__name__)
+
+def three_d_denoising(cbct_path: str, mask_path: str, hu_min: int = -1000, hu_max: int = 3000, lower_threshold_mask: int = 170, low_threshold: int = 5, high_threshold: int = 15):
     """
     Denoise all slices from 3D CBCT data and their corresponding masks.
 
@@ -27,36 +32,63 @@ def three_d_denoising(cbct_path: str, mask_path: str, hu_min: int = -1000, hu_ma
         denoised_3d (np.ndarray): Denoised and windowed 3D image (uint8).
         mask_3d (np.ndarray): Corresponding 3D mask.
     """
+    logger.info(f"Loading CBCT data from {cbct_path}")
     cbct_data = np.load(cbct_path)
+    logger.info(f"Loading mask data from {mask_path}")
     mask_data = np.load(mask_path)
-    print(f"CBCT data shape: {cbct_data.shape}")
-    print(f"Mask data shape: {mask_data.shape}")
+    logger.info(f"CBCT data shape: {cbct_data.shape}")
+    logger.info(f"Mask data shape: {mask_data.shape}")
     converted = Denoise.hounsfield_to_255(cbct_data, hu_min, hu_max)
+    logger.info("Converted Hounsfield units to 0-255 scale.")
     num_slices = converted.shape[1]
-    denoised_slices = []
-    mask_slices = []
+    # denoised_slices = []
+    edges_masked_slices = []
+    masked_slices = []
+    mask_3d_slices = []
     for slice_index in range(num_slices):
-        print(slice_index)
+        logger.info(f"Processing slice {slice_index+1}/{num_slices}")
         slice_2d = converted[:, slice_index, :]
         mask_2d = mask_data[:, slice_index, :]
         output = Denoise.adaptive_median_filter(slice_2d, 7)
-        print("adaptive_median_filter")
+        logger.info(f"Applied adaptive median filter to slice {slice_index+1}")
         log_transformed, original_min, eps = Denoise.log_transform_for_denoising(output)
-        print("log_transform_for_denoising")
+        logger.info(f"Applied log transform to slice {slice_index+1}")
         denoised_log = Denoise.denoise_log_transformed_image(log_transformed)
-        print("denoise_log_transformed_image")
+        logger.info(f"Denoised log-transformed image for slice {slice_index+1}")
         inv_log = Denoise.inverse_log_transform(denoised_log, original_min, eps)
-        print("inverse_log_transform")
+        logger.info(f"Inverse log transform applied to slice {slice_index+1}")
         denoised_img_uint8 = Denoise.apply_window(inv_log, window_center=40, window_width=400)
-        denoised_slices.append(denoised_img_uint8)
-        mask_slices.append(mask_2d)
-        # np.save(rf"D:\Mphil\Programming\EfficientPointMed\output\3d\test\selected_denoised_3d{slice_index}.npy", denoised_img_uint8)
-    denoised_3d = np.stack(denoised_slices, axis=1)
-    mask_3d = np.stack(mask_slices, axis=1)
+        logger.info(f"Applied windowing to slice {slice_index+1}")
+        # Thresholding
+        _, mask = cv2.threshold(denoised_img_uint8, lower_threshold_mask, 255, cv2.THRESH_BINARY)
+        logger.info(f"Applied thresholding to slice {slice_index+1}")
+        mask_uint8 = (mask > 0).astype(np.uint8) * 255
+        # Contour detection
+        contours, hierarchy = cv2.findContours(mask_uint8, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        logger.info(f"Detected {len(contours)} contours in slice {slice_index+1}")
+        shape = mask_uint8.shape[:2]
+        # Masking
+        mask = Denoise.contour_to_filled_mask(contours, shape)
+        logger.info(f"Created filled mask from contours for slice {slice_index+1}")
+        mask_bool = (mask > 0).astype(np.uint8)
+        masked_img = cv2.bitwise_and(denoised_img_uint8, denoised_img_uint8, mask=mask_bool)
+        logger.info(f"Applied mask to denoised image for slice {slice_index+1}")
+        # Edge detection
+        # edges_masked = Denoise.canny_edge_detection(masked_img, low_threshold=low_threshold, high_threshold=high_threshold)
+        logger.info(f"Applied Canny edge detection to masked image for slice {slice_index+1}")
+        masked_slices.append(masked_img)
+        np.save(rf"D:\Mphil\Programming\EfficientPointMed\output\3d\pc_test_slice\array\masked_img_{slice_index}.npy", masked_img)
+    denoised_3d = np.stack(edges_masked_slices, axis=1)
+    mask_3d = mask_data
+    logger.info("Stacked all denoised slices into a 3D volume.")
     # Estimate noise variance from the 3D image (using median absolute deviation)
     noise_sigma = np.median(np.abs(denoised_3d - np.median(denoised_3d))) / 0.6745
     noise_var = noise_sigma ** 2
+    logger.info(f"Estimated noise variance: {noise_var:.6f}")
+    if noise_var < 1e-8:
+        logger.warning("Estimated noise variance is very low; Wiener filter may have limited effect.")
     denoised_3d = Denoise.three_d_adaptive_wiener_filter(denoised_3d, noise_var, window_size=5, axis=1)
+    logger.info("Applied 3D Wiener filtering to the denoised volume.")
     return denoised_3d, mask_3d
 
 def pointcloud_formulation(
