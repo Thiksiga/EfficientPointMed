@@ -74,84 +74,92 @@ def three_d_denoising(cbct_path: str, mask_path: str, hu_min: int = -1000, hu_ma
         masked_img = cv2.bitwise_and(denoised_img_uint8, denoised_img_uint8, mask=mask_bool)
         logger.info(f"Applied mask to denoised image for slice {slice_index+1}")
         # Edge detection
-        # edges_masked = Denoise.canny_edge_detection(masked_img, low_threshold=low_threshold, high_threshold=high_threshold)
+        edges_masked = Denoise.canny_edge_detection(masked_img, low_threshold=low_threshold, high_threshold=high_threshold)
         logger.info(f"Applied Canny edge detection to masked image for slice {slice_index+1}")
-        masked_slices.append(masked_img)
-        np.save(rf"D:\Mphil\Programming\EfficientPointMed\output\3d\pc_test_slice\array\masked_img_{slice_index}.npy", masked_img)
+        # Save the 2D array as an image
+        # plt.imsave(rf'D:\Mphil\Programming\EfficientPointMed\output\3d\pc_test_slice\pc\slice_{slice_index+1}.png', edges_masked, cmap='gray')
+        edges_masked_slices.append(edges_masked)
+        # np.save(rf"D:\Mphil\Programming\EfficientPointMed\output\3d\pc_test_slice\array\edges_masked_img_{slice_index+1}.npy", masked_img)
     denoised_3d = np.stack(edges_masked_slices, axis=1)
     mask_3d = mask_data
     logger.info("Stacked all denoised slices into a 3D volume.")
-    # Estimate noise variance from the 3D image (using median absolute deviation)
-    noise_sigma = np.median(np.abs(denoised_3d - np.median(denoised_3d))) / 0.6745
-    noise_var = noise_sigma ** 2
-    logger.info(f"Estimated noise variance: {noise_var:.6f}")
-    if noise_var < 1e-8:
-        logger.warning("Estimated noise variance is very low; Wiener filter may have limited effect.")
-    denoised_3d = Denoise.three_d_adaptive_wiener_filter(denoised_3d, noise_var, window_size=5, axis=1)
-    logger.info("Applied 3D Wiener filtering to the denoised volume.")
+    # # Estimate noise variance from the 3D image (using median absolute deviation)
+    # noise_sigma = np.median(np.abs(denoised_3d - np.median(denoised_3d))) / 0.6745
+    # noise_var = noise_sigma ** 2
+    # logger.info(f"Estimated noise variance: {noise_var:.6f}")
+    # if noise_var < 1e-8:
+    #     logger.warning("Estimated noise variance is very low; Wiener filter may have limited effect.")
+    # denoised_3d = Denoise.three_d_adaptive_wiener_filter(denoised_3d, noise_var, window_size=5, axis=1)
+    # logger.info("Applied 3D Wiener filtering to the denoised volume.")
     return denoised_3d, mask_3d
 
-def pointcloud_formulation(
-    denoised_img, mask_2d, output_path_ply: str, output_path_npy: str,
-    lower_threshold_mask: int = 170, low_threshold: int = 5, high_threshold: int = 15
+def pointcloud_formulation_3d(
+    edge_detected_img, mask_3d, output_path_ply: str, output_path_npy: str
 ):
     """
-    Generate a point cloud from a denoised image and mask, saving to .ply and .npy files.
+    Generate a 3D point cloud from a 3D edge-detected image and mask, saving to .ply and .npy files.
 
     Parameters:
-        denoised_img (np.ndarray): Denoised 2D image (uint8).
-        mask_2d (np.ndarray): 2D mask corresponding to the image.
+        edge_detected_img (np.ndarray): 3D edge-detected image (binary or intensity).
+        mask_3d (np.ndarray): 3D mask corresponding to the image.
         output_path_ply (str): Path to save the output .ply file.
         output_path_npy (str): Path to save the output .npy file.
-        lower_threshold_mask (int, optional): Threshold for mask binarization. Default is 170.
-        low_threshold (int, optional): Low threshold for Canny edge detection. Default is 5.
-        high_threshold (int, optional): High threshold for Canny edge detection. Default is 15.
 
     Returns:
         None
     """
-    _, mask = cv2.threshold(denoised_img, lower_threshold_mask, 255, cv2.THRESH_BINARY)
-    mask_uint8 = (mask > 0).astype(np.uint8) * 255
-    contours, hierarchy = cv2.findContours(mask_uint8, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-    shape = mask_uint8.shape[:2]
-    mask = Denoise.contour_to_filled_mask(contours, shape)
-    mask_bool = (mask > 0).astype(np.uint8)
-    masked_img = cv2.bitwise_and(denoised_img, denoised_img, mask=mask_bool)
-    edges_masked = Denoise.canny_edge_detection(masked_img, low_threshold=low_threshold, high_threshold=high_threshold)
-    gradient = np.gradient(masked_img)
-    magnitude = np.sqrt(gradient[0] ** 2 + gradient[1] ** 2)
-    edge_points = np.column_stack(np.where(edges_masked > 0))
+    # Compute 3D gradient magnitude
+    dz, dy, dx = np.gradient(edge_detected_img.astype(float))
+    magnitude = np.sqrt(dx**2 + dy**2 + dz**2)
+
+    # Get coordinates of nonzero (edge) points
+    edge_points = np.column_stack(np.where(edge_detected_img > 0))
     point_cloud = []
+
     for point in edge_points:
-        x, y = point
-        grad = magnitude[x, y]
-        label = mask_2d[x, y]
-        point_cloud.append((y, x, grad, label))
-    num_points = len(edge_points)
+        z, y, x = point  # np.where order: (z, y, x)
+        grad = magnitude[z, y, x]
+        label = mask_3d[z, y, x]
+        point_cloud.append((x, y, z, grad, int(label)))  # (x, y, z, gradient, label)
+
+    num_points = len(point_cloud)
     print(f"Number of points detected: {num_points}")
+
+    # Save to .ply file
     with open(output_path_ply, "w") as ply_file:
         ply_file.write("ply\n")
         ply_file.write("format ascii 1.0\n")
-        ply_file.write(f"element vertex {len(point_cloud)}\n")
+        ply_file.write(f"element vertex {num_points}\n")
         ply_file.write("property float x\n")
         ply_file.write("property float y\n")
+        ply_file.write("property float z\n")
         ply_file.write("property float intensity_gradient\n")
         ply_file.write("property uchar label\n")
         ply_file.write("end_header\n")
         for point in point_cloud:
-            ply_file.write(f"{point[0]} {point[1]} {point[2]} {point[3]}\n")
-    print("Point cloud data saved to point_cloud_data_with_labels.ply")
+            x, y, z, grad, label = point
+            ply_file.write(f"{x} {y} {z} {grad} {label}\n")
+
+    print(f"Point cloud data saved to {output_path_ply}")
+
+    # Save to .npy file
     point_cloud_array = np.array(point_cloud)
     np.save(output_path_npy, point_cloud_array)
-    print("Point cloud saved as 'point_cloud.npy'")
+    print(f"Point cloud saved as '{output_path_npy}'")
+
     return
 
 if __name__ == "__main__":
-    denoised_img, mask_2d = three_d_denoising(
-        cbct_path=r"D:\Mphil\Programming\2DtoPointcloud_v2\dataset\P1-20250324T100522Z-001\P1\data.npy",
-        mask_path=r"D:\Mphil\Programming\2DtoPointcloud_v2\dataset\P1-20250324T100522Z-001\P1\gt_alpha.npy"
-    )
+    # denoised_img, mask_3d = three_d_denoising(
+    #     cbct_path=r"D:\Mphil\Programming\2DtoPointcloud_v2\dataset\P1-20250324T100522Z-001\P1\data.npy",
+    #     mask_path=r"D:\Mphil\Programming\2DtoPointcloud_v2\dataset\P1-20250324T100522Z-001\P1\gt_alpha.npy"
+    # )
    
     # Save the selected slices (or the entire denoised_img if that's what you want)
-    np.save(r"D:\Mphil\Programming\EfficientPointMed\output\selected_denoised_3d.npy", denoised_img)
+    # np.save(r"D:\Mphil\Programming\EfficientPointMed\output\selected_denoised_3d.npy", denoised_img)
+
+    denoised_img = np.load(r"D:\Mphil\Programming\EfficientPointMed\output\selected_denoised_3d.npy")
+    mask_3d = np.load(r"D:\Mphil\Programming\2DtoPointcloud_v2\dataset\P1-20250324T100522Z-001\P1\gt_alpha.npy")
+
+    pointcloud_formulation_3d(denoised_img, mask_3d, r"D:\Mphil\Programming\EfficientPointMed\output\3d\3d\pointcloud_ply.ply", r"D:\Mphil\Programming\EfficientPointMed\output\3d\3d\pointcloud_npy.npy")
         
