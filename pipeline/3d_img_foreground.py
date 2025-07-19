@@ -18,7 +18,7 @@ import logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
-def three_d_denoising(cbct_path: str, mask_path: str, hu_min: int = -1000, hu_max: int = 3000, lower_threshold_mask: int = 170, low_threshold: int = 5, high_threshold: int = 15):
+def three_d_denoising(cbct_path: str, mask_path: str, hu_min: int = -1000, hu_max: int = 3000, lower_threshold_mask: int = 170, low_threshold: int = 0, high_threshold: int = 5):
     """
     Denoise all slices from 3D CBCT data and their corresponding masks.
 
@@ -68,10 +68,10 @@ def three_d_denoising(cbct_path: str, mask_path: str, hu_min: int = -1000, hu_ma
         logger.info(f"Detected {len(contours)} contours in slice {slice_index+1}")
         shape = mask_uint8.shape[:2]
         # Masking
-        mask = Denoise.contour_to_filled_mask(contours, shape)
-        logger.info(f"Created filled mask from contours for slice {slice_index+1}")
-        mask_bool = (mask > 0).astype(np.uint8)
-        masked_img = cv2.bitwise_and(denoised_img_uint8, denoised_img_uint8, mask=mask_bool)
+        slice_2d_uint8 = slice_2d.astype(np.uint8)
+        mask_uint8 = (mask > 0).astype(np.uint8)
+        mask_cv = mask_uint8 * 255
+        masked_img = cv2.bitwise_and(slice_2d_uint8, slice_2d_uint8, mask=mask_cv)
         logger.info(f"Applied mask to denoised image for slice {slice_index+1}")
         # Edge detection
         edges_masked = Denoise.canny_edge_detection(masked_img, low_threshold=low_threshold, high_threshold=high_threshold)
@@ -150,13 +150,13 @@ def pointcloud_formulation_3d(
     return
 
 if __name__ == "__main__":
-    # denoised_img, mask_3d = three_d_denoising(
-    #     cbct_path=r"D:\Mphil\Programming\2DtoPointcloud_v2\dataset\P1-20250324T100522Z-001\P1\data.npy",
-    #     mask_path=r"D:\Mphil\Programming\2DtoPointcloud_v2\dataset\P1-20250324T100522Z-001\P1\gt_alpha.npy"
-    # )
+    denoised_img, mask_3d = three_d_denoising(
+        cbct_path=r"D:\Mphil\Programming\2DtoPointcloud_v2\dataset\P1-20250324T100522Z-001\P1\data.npy",
+        mask_path=r"D:\Mphil\Programming\2DtoPointcloud_v2\dataset\P1-20250324T100522Z-001\P1\gt_alpha.npy", lower_threshold_mask= 170
+    )
    
     # Save the selected slices (or the entire denoised_img if that's what you want)
-    # np.save(r"D:\Mphil\Programming\EfficientPointMed\output\selected_denoised_3d.npy", denoised_img)
+    np.save(r"D:\Mphil\Programming\EfficientPointMed\output\selected_denoised_3d.npy", denoised_img)
 
     denoised_img = np.load(r"D:\Mphil\Programming\EfficientPointMed\output\selected_denoised_3d.npy")
     mask_3d = np.load(r"D:\Mphil\Programming\2DtoPointcloud_v2\dataset\P1-20250324T100522Z-001\P1\gt_alpha.npy")
