@@ -12,6 +12,16 @@ from scipy.signal import wiener
 import numpy as np
 from numba import jit
 import cv2
+import open3d as o3d
+from scipy.ndimage import convolve
+import matplotlib.pyplot as plt
+
+
+class BasicPointCloud:
+    def __init__(self, points, colors=None, normals=None):
+        self.points = points
+        self.colors = colors if colors is not None else np.zeros_like(points)
+        self.normals = normals if normals is not None else np.zeros_like(points)
 
 class Denoise:
     """
@@ -372,6 +382,123 @@ class Denoise:
         mask = np.zeros(shape, dtype=np.uint8)
         cv2.drawContours(mask, contour, -1, fill_value, thickness=-1)
         return mask
+
+    @staticmethod
+    def prewitt_2d(image):
+        """
+        Apply the Prewitt edge detector to a 2D image.
+
+        Parameters:
+            image (np.ndarray): 2D input image (e.g., shape [H, W]).
+
+        Returns:
+            edges (np.ndarray): 2D array of edge intensity (same shape as input).
+        """
+        # Define Prewitt kernels for X and Y directions
+        kernel_x = np.array([[ -1, 0, 1],
+                            [ -1, 0, 1],
+                            [ -1, 0, 1]])
+        kernel_y = np.array([[ -1, -1, -1],
+                            [  0,  0,  0],
+                            [  1,  1,  1]])
+        
+        # Convolve with kernels
+        gx = convolve(image.astype(float), kernel_x, mode='nearest')
+        gy = convolve(image.astype(float), kernel_y, mode='nearest')
+        
+        # Edge magnitude
+        edges = np.sqrt(gx**2 + gy**2)
+        return edges
+
+    @staticmethod
+    def prewitt_3d(volume):
+        """
+        Apply the Prewitt edge detector to a 3D volume.
+
+        Parameters:
+            volume (np.ndarray): 3D input volume (e.g., shape [D, H, W]).
+
+        Returns:
+            edges (np.ndarray): 3D array of edge intensity (same shape as input).
+        """
+        # Prewitt kernel for X gradient
+        kernel_x = np.array([
+            [[-1, 0, 1],
+            [-1, 0, 1],
+            [-1, 0, 1]],
+            [[-1, 0, 1],
+            [-1, 0, 1],
+            [-1, 0, 1]],
+            [[-1, 0, 1],
+            [-1, 0, 1],
+            [-1, 0, 1]]
+        ])
+
+        # Prewitt kernel for Y gradient
+        kernel_y = np.array([
+            [[-1, -1, -1],
+            [0, 0, 0],
+            [1, 1, 1]],
+            [[-1, -1, -1],
+            [0, 0, 0],
+            [1, 1, 1]],
+            [[-1, -1, -1],
+            [0, 0, 0],
+            [1, 1, 1]]
+        ])
+
+        # Prewitt kernel for Z gradient
+        kernel_z = np.array([
+            [[-1, -1, -1],
+            [-1, -1, -1],
+            [-1, -1, -1]],
+            [[0, 0, 0],
+            [0, 0, 0],
+            [0, 0, 0]],
+            [[1, 1, 1],
+            [1, 1, 1],
+            [1, 1, 1]]
+        ])
+
+        # Calculate gradients along each axis
+        gx = convolve(volume.astype(float), kernel_x, mode='nearest')
+        gy = convolve(volume.astype(float), kernel_y, mode='nearest')
+        gz = convolve(volume.astype(float), kernel_z, mode='nearest')
+
+        # Edge magnitude
+        edges = np.sqrt(gx**2 + gy**2 + gz**2)
+        return edges
+
+    @staticmethod
+    def curvature_preserving_sampling(point_cloud: BasicPointCloud, k_neighbors=20, fraction=0.2):
+        o3d_cloud = o3d.geometry.PointCloud()
+        o3d_cloud.points = o3d.utility.Vector3dVector(point_cloud.points)
+        o3d_cloud.estimate_normals(search_param=o3d.geometry.KDTreeSearchParamKNN(knn=k_neighbors))
+        curvatures = []
+        kdtree = o3d.geometry.KDTreeFlann(o3d_cloud)
+        for i in range(len(point_cloud.points)):
+            _, idx, _ = kdtree.search_knn_vector_3d(o3d_cloud.points[i], k_neighbors)
+            neighbors = np.asarray(o3d_cloud.points)[idx]
+            cov = np.cov(neighbors, rowvar=False)
+            eigenvalues, _ = np.linalg.eigh(cov)
+            curvature = eigenvalues[0] / sum(eigenvalues)
+            curvatures.append(curvature)
+        sorted_indices = np.argsort(curvatures)[::-1]
+        num_samples = int(len(point_cloud.points) * fraction)
+        selected_indices = sorted_indices[:num_samples]
+        return BasicPointCloud(points=point_cloud.points[selected_indices],
+                            colors=point_cloud.colors[selected_indices],
+                            normals=point_cloud.normals[selected_indices]), selected_indices
+
+  
+
+
+
+
+
+    
+
+
 
 
 # Template for a custom Non-Local Means implementation (currently commented out)
