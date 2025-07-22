@@ -17,6 +17,7 @@ from scipy.ndimage import convolve
 import matplotlib.pyplot as plt
 
 
+
 class BasicPointCloud:
     def __init__(self, points, colors=None, normals=None):
         self.points = points
@@ -287,7 +288,7 @@ class Denoise:
         Returns:
             np.ndarray: Wiener-filtered 3D array.
         """
-        from scipy.signal import wiener
+        
         epsilon = 1e-8
         safe_noise_var = noise_var + epsilon
         filtered = np.empty_like(volume, dtype=np.float64)
