@@ -202,7 +202,7 @@ import cv2
 #     print(f"Number of points detected: {len(point_cloud)}")
 
 #     return
-
+###--------Curvature preserving on 3d pointcloud -------------
 import numpy as np
 import cv2
 
@@ -335,7 +335,7 @@ if __name__ == "__main__":
     denoised_3d, mask_3d, point_cloud_3d = three_d_denoising(
         cbct_path=r"D:\Mphil\Programming\2DtoPointcloud_v2\dataset\P1-20250324T100522Z-001\P1\data.npy",
         mask_path=r"D:\Mphil\Programming\2DtoPointcloud_v2\dataset\P1-20250324T100522Z-001\P1\gt_alpha.npy",
-        pointcloud_save_path=r"D:\Mphil\Programming\EfficientPointMed\output\3d\3d\pointcloud_sampled_3.npy", lower_threshold_mask= 150
+        pointcloud_save_path=r"D:\Mphil\Programming\EfficientPointMed\output\3d\3d\pointcloud_sampled_6.npy", lower_threshold_mask= 150
     )
    
     # # Save the selected slices (or the entire denoised_img if that's what you want)
