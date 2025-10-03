@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import re
 
 # Replace this with your actual file path
-file_path = r"D:\Mphil\Programming\EfficientPointMed\output\denoise_dev\gauss_mag_177_0.5.npy"
+file_path = r"D:\Mphil\Programming\EfficientPointMed\output\denoise_dev\slice_point_cloud_177.npy"
 
 # Load the array from the .npy file
 arr = np.load(file_path)
@@ -20,7 +20,7 @@ print(arr.shape)
 
 # Save the 2D array as an image
 # plt.imsave(rf'D:\Mphil\Programming\EfficientPointMed\output\3d\pc_test_slice\img\slice_{idx}.png', arr, cmap='gray')
-plt.imsave(rf'D:\Mphil\Programming\EfficientPointMed\output\denoise_dev\gauss_mag_177_0.5.png', arr, cmap='gray')
+plt.imsave(rf'D:\Mphil\Programming\EfficientPointMed\output\denoise_dev\slice_point_cloud_177.png', arr, cmap='gray')
 
 # num_slices = arr.shape[1]
 # slice_indices = [0, num_slices // 2, num_slices - 1]
