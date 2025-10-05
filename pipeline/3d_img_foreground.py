@@ -208,7 +208,7 @@ import cv2
 
 def three_d_denoising(cbct_path: str, mask_path: str, pointcloud_save_path: str,
                       hu_min: int = -1000, hu_max: int = 3000,
-                      lower_threshold_mask: int = 170, low_threshold: int = 0, high_threshold: int = 5,
+                      lower_threshold_mask: int = 1000, low_threshold: int = 0, high_threshold: int = 5,
                       sampling_fraction: float = 0.2, k_neighbors: int = 5):
     """
     Denoise all slices from 3D CBCT data and their corresponding masks, build a sampled 3D point cloud (slice-wise sampling).
@@ -236,16 +236,16 @@ def three_d_denoising(cbct_path: str, mask_path: str, pointcloud_save_path: str,
     mask_data = np.load(mask_path)
     logger.info(f"CBCT data shape: {cbct_data.shape}")
     logger.info(f"Mask data shape: {mask_data.shape}")
-    converted = Denoise.hounsfield_to_255(cbct_data, hu_min, hu_max)
-    logger.info("Converted Hounsfield units to 0-255 scale.")
-    num_slices = converted.shape[1]
+    # converted = Denoise.hounsfield_to_255(cbct_data, hu_min, hu_max)
+    # logger.info("Converted Hounsfield units to 0-255 scale.")
+    num_slices = cbct_data.shape[1]
 
     masked_slices = []
     sampled_point_cloud_3d = []
 
     for slice_index in range(num_slices):
         logger.info(f"Processing slice {slice_index+1}/{num_slices}")
-        slice_2d = converted[:, slice_index, :]
+        slice_2d = cbct_data[:, slice_index, :]
         mask_2d = mask_data[:, slice_index, :]
         output = Denoise.adaptive_median_filter(slice_2d, 7)
         logger.info(f"Applied adaptive median filter to slice {slice_index+1}")
@@ -255,10 +255,10 @@ def three_d_denoising(cbct_path: str, mask_path: str, pointcloud_save_path: str,
         logger.info(f"Denoised log-transformed image for slice {slice_index+1}")
         inv_log = Denoise.inverse_log_transform(denoised_log, original_min, eps)
         logger.info(f"Inverse log transform applied to slice {slice_index+1}")
-        denoised_img_uint8 = Denoise.apply_window(inv_log, window_center=40, window_width=400)
-        logger.info(f"Applied windowing to slice {slice_index+1}")
-        # Thresholding
-        _, mask = cv2.threshold(denoised_img_uint8, lower_threshold_mask, 255, cv2.THRESH_BINARY)
+        # denoised_img_uint8 = Denoise.apply_window(inv_log, window_center=40, window_width=400)
+        # logger.info(f"Applied windowing to slice {slice_index+1}")
+        ##---- Thresholding----
+        _, mask = cv2.threshold(inv_log, lower_threshold_mask, 1, cv2.THRESH_BINARY)
         logger.info(f"Applied thresholding to slice {slice_index+1}")
         mask_uint8 = (mask > 0).astype(np.uint8) * 255
         # Contour detection
@@ -299,14 +299,21 @@ def three_d_denoising(cbct_path: str, mask_path: str, pointcloud_save_path: str,
 
         # Perform slice-wise sampling
         if num_points > 0:
-            points_xyz = np.array([p[:3] for p in slice_point_cloud], dtype=np.float32)
-            grads = np.array([p[3] for p in slice_point_cloud], dtype=np.float32)
-            labels = np.array([p[4] for p in slice_point_cloud], dtype=np.float32)
-            pc = BasicPointCloud(points=points_xyz)
+
+            points_xyz = np.array([(x, y, z) for (x, y, z, grad, label) in slice_point_cloud])
+            labels = np.array([label for (x, y, z, grad, label) in slice_point_cloud])
+            grads = np.array([grad for (x, y, z, grad, label) in slice_point_cloud])
+            inputs = np.array([(x, y, grad) for (x, y, z, grad, label) in slice_point_cloud])
+            pc = BasicPointCloud(points=inputs)
+            # pc = BasicPointCloud(points=points_xyz, gradients=grad, labels=labels)
             sampled_pc, selected_indices = Denoise.curvature_preserving_sampling(
                 pc, k_neighbors=k_neighbors, fraction=sampling_fraction
             )
-            sampled_points = sampled_pc.points
+            # sampled_points = sampled_pc.points
+            sampled_points = points_xyz[selected_indices]
+            logger.info("sampled point format: %s", sampled_points[0])
+            logger.info("number of sampled points: %d", len(sampled_points))
+
             sampled_grads = grads[selected_indices]
             sampled_labels = labels[selected_indices]
             sampled_points_slice = np.column_stack((sampled_points, sampled_grads, sampled_labels))
@@ -335,7 +342,7 @@ if __name__ == "__main__":
     denoised_3d, mask_3d, point_cloud_3d = three_d_denoising(
         cbct_path=r"D:\Mphil\Programming\2DtoPointcloud_v2\dataset\P1-20250324T100522Z-001\P1\data.npy",
         mask_path=r"D:\Mphil\Programming\2DtoPointcloud_v2\dataset\P1-20250324T100522Z-001\P1\gt_alpha.npy",
-        pointcloud_save_path=r"D:\Mphil\Programming\EfficientPointMed\output\3d\3d\pointcloud_sampled_6.npy", lower_threshold_mask= 150
+        pointcloud_save_path=r"D:\Mphil\Programming\EfficientPointMed\output\3d\3d\pointcloud_sampled_12.npy", lower_threshold_mask= 1000
     )
    
     # # Save the selected slices (or the entire denoised_img if that's what you want)

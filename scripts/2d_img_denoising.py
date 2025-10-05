@@ -17,7 +17,9 @@ slice_idx = 176
 hu_min = -1000
 hu_max = 4000
 lower_threshold_mask = 1000
-high_threshold = 2
+high_threshold = 5
+k_neighbors = 5
+sampling_fraction = 0.5
 
 cbct_slice = cbct_data[:, slice_idx, :]        # shape: (z, x)
 mask_slice = mask_data[:, slice_idx, :]        # shape: (z, x)
@@ -80,6 +82,9 @@ np.save(f"../output/denoise_dev/filled_mask_{slice_idx+1}.npy", filled_mask)
 masked_img = cv2.bitwise_and(inv_log, inv_log, mask=filled_mask)
 logger.info(f"Applied mask to denoised image for slice {slice_idx+1}")
 np.save(f"../output/denoise_dev/masked_img_{slice_idx+1}.npy", masked_img)
+
+
+#-----------------Avoid below code for now-------------
 edges_2d = Denoise.prewitt_2d(masked_img)
 print("edges_2d_unique:",np.unique(edges_2d))
 np.save(f"../output/denoise_dev/edges_2d_{slice_idx+1}.npy", edges_2d)
@@ -87,33 +92,43 @@ edge_mask = edges_2d > high_threshold
 np.save(f"../output/denoise_dev/edge_mask_{high_threshold}_{slice_idx+1}.npy", edge_mask)
 edge_points = np.argwhere(edge_mask)  # Each row: [x, y]
 print("edge_points: ",edge_points)
-#
-# # Build point cloud for this slice: (x, y, z, grad, label)
-# slice_point_cloud = []
-# for x, y in edge_points:
-#     grad = edges_2d[x, y]
-#     label = mask_2d[x, y]
-#     slice_point_cloud.append((x, y, slice_idx, grad, label))
-#
-# num_points = len(slice_point_cloud)
-# logger.info(f"Number of edge points in slice {slice_idx+1}: {num_points}")
-#
-# # Perform slice-wise sampling
-# if num_points > 0:
-#     points_xyz = np.array([p[:3] for p in slice_point_cloud], dtype=np.float32)
-#     grads = np.array([p[3] for p in slice_point_cloud], dtype=np.float32)
-#     labels = np.array([p[4] for p in slice_point_cloud], dtype=np.float32)
-#     pc = BasicPointCloud(points=points_xyz)
-#     sampled_pc, selected_indices = Denoise.curvature_preserving_sampling(
-#         pc, k_neighbors=k_neighbors, fraction=sampling_fraction
-#     )
-#     sampled_points = sampled_pc.points
-#     sampled_grads = grads[selected_indices]
-#     sampled_labels = labels[selected_indices]
-#     sampled_points_slice = np.column_stack((sampled_points, sampled_grads, sampled_labels))
-#     sampled_point_cloud_3d.append(sampled_points_slice)
-#
+
+# Build point cloud for this slice: (x, y, z, grad, label)
+slice_point_cloud = []
+for x, y in edge_points:
+    grad = edges_2d[x, y]
+    label = mask_slice[x, y]
+    slice_point_cloud.append((x, y, slice_idx, grad, label))
+    # slice_point_cloud.append((x, y, grad, label))
+
+num_points = len(slice_point_cloud)
+logger.info(f"Number of edge points in slice {slice_idx+1}: {num_points}")
+np.save(f"../output/denoise_dev/slice_point_cloud_{slice_idx+1}.npy", slice_point_cloud)
+
+sampled_point_cloud_3d = []
+masked_slices = []
+
+# Perform slice-wise sampling
+if num_points > 0:
+    # points_xyz = np.array([p[:3] for p in slice_point_cloud], dtype=np.float32)
+    # grads = np.array([p[3] for p in slice_point_cloud], dtype=np.float32)
+    # labels = np.array([p[4] for p in slice_point_cloud], dtype=np.float32)
+    points = np.array([(x, y, z) for (x, y, z, grad, label) in slice_point_cloud])
+    labels = np.array([label for (x, y, z, grad, label) in slice_point_cloud])
+    pc = BasicPointCloud(points=points)
+    sampled_pc, selected_indices = Denoise.curvature_preserving_sampling(
+        pc, k_neighbors=k_neighbors, fraction=sampling_fraction
+    )
+    sampled_points = sampled_pc.points
+    sampled_labels = labels[selected_indices]
+    sampled_points_slice = np.column_stack((sampled_points, sampled_labels))
+    np.save(f"../output/denoise_dev/sampled_points_slice_{slice_idx + 1}.npy", sampled_points_slice)
+    sampled_point_cloud_3d.append(sampled_points_slice)
+
 # masked_slices.append(masked_img)
+# np.save(f"../output/denoise_dev/masked_slices_1.npy", masked_slices)
+
+
 
 
 

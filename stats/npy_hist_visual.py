@@ -35,7 +35,7 @@ def main():
     print(f"P1={p1:.6g}, P99={p99:.6g}")
 
     # Choose range
-    xr = (p1, p99) if args.robust else (vmin, vmax)
+    xr = (p1, p99) if args.robust else (vmin+1, vmax)
 
     plt.figure()
     plt.hist(arr.ravel(), bins=args.bins, range=xr)

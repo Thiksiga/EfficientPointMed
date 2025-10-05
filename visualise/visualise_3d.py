@@ -93,7 +93,7 @@ def to_xyz(arr: np.ndarray) -> np.ndarray:
     return xyz.astype(np.float64, copy=False)
 
 if __name__ == "__main__":
-    file_path = r"D:\Mphil\Programming\EfficientPointMed\output\3d\3d\pointcloud_sampled_6.npy"
+    file_path = r"D:\Mphil\Programming\EfficientPointMed\output\3d\3d\pointcloud_sampled_12.npy"
     # file_path = r"D:\Mphil\Programming\EfficientPointMed\output\3d\3d\pointcloud_op_4_cpnus_on_3d.npy"
     # file_path = r"D:\Mphil\Programming\EfficientPointMed\output\3d\3d\pointcloud_sampled_4_cpnus_on_3d.npy"
     # file_path = r"D:\Mphil\Programming\EfficientPointMed\output\3d\3d\pointcloud_sampled_4_cpnus0_2_on_3d.npy"
@@ -102,23 +102,23 @@ if __name__ == "__main__":
     print("Loaded shape:", arr.shape, "| dtype:", arr.dtype)
 
     #-------VISUALISE ONLY MASKED REGION----------------
-    # visualize_label1(arr, point_size=4.0)  # shows only label==1 region
+    visualize_label1(arr, point_size=4.0)  # shows only label==1 region
 
-    #-------VISUALISE THE ENTIRE 3D IMAGE---------------
-    # 2) Convert to Nx3 (no GPU, no processing beyond basic shape handling)
-    xyz = to_xyz(arr)
-    print("Point count:", len(xyz))
-
-    # 3) Build Open3D point cloud
-    pcd = o3d.geometry.PointCloud()
-    pcd.points = o3d.utility.Vector3dVector(xyz)
-
-    # 4) Interactive view (adjust point size)
-    vis = o3d.visualization.Visualizer()
-    vis.create_window(window_name=f"Point Cloud (Interactive): {len(xyz)}", width=1280, height=800, visible=True)
-    vis.add_geometry(pcd)
-    opt = vis.get_render_option()
-    opt.background_color = np.array([0, 0, 0])  # black background (optional)
-    opt.point_size = point_size
-    vis.run()          # rotate/zoom/pan with mouse; press H for help
-    vis.destroy_window()
+    # #-------VISUALISE THE ENTIRE 3D IMAGE---------------
+    # # 2) Convert to Nx3 (no GPU, no processing beyond basic shape handling)
+    # xyz = to_xyz(arr)
+    # print("Point count:", len(xyz))
+    #
+    # # 3) Build Open3D point cloud
+    # pcd = o3d.geometry.PointCloud()
+    # pcd.points = o3d.utility.Vector3dVector(xyz)
+    #
+    # # 4) Interactive view (adjust point size)
+    # vis = o3d.visualization.Visualizer()
+    # vis.create_window(window_name=f"Point Cloud (Interactive): {len(xyz)}", width=1280, height=800, visible=True)
+    # vis.add_geometry(pcd)
+    # opt = vis.get_render_option()
+    # opt.background_color = np.array([0, 0, 0])  # black background (optional)
+    # opt.point_size = point_size
+    # vis.run()          # rotate/zoom/pan with mouse; press H for help
+    # vis.destroy_window()

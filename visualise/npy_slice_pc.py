@@ -78,12 +78,16 @@ def parse_args():
     return p.parse_args()
 
 def robust_norm(v):
+    import numpy as np
     v = np.asarray(v, dtype=np.float32)
+    if v.size == 0:
+        return v  # nothing to do
     p2, p98 = np.percentile(v, [2, 98])
     if p98 > p2:
-        v = (v - p2) / (p98 - p2)
+        v = (v - p2) / max((p98 - p2), 1e-12)
     else:
-        v = (v - v.min()) / max(v.ptp(), 1e-12)
+        rng = np.ptp(v)  # NumPy 2.x-safe
+        v = (v - np.min(v)) / max(rng, 1e-12)
     return np.clip(v, 0.0, 1.0)
 
 def main():
