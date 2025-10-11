@@ -473,7 +473,7 @@ class Denoise:
         return edges
 
     @staticmethod
-    def curvature_preserving_sampling(point_cloud: BasicPointCloud, k_neighbors=20, fraction=0.2):
+    def curvature_preserving_sampling(point_cloud: BasicPointCloud, k_neighbors=20, fraction=0.5):
         o3d_cloud = o3d.geometry.PointCloud()
         o3d_cloud.points = o3d.utility.Vector3dVector(point_cloud.points)
         o3d_cloud.estimate_normals(search_param=o3d.geometry.KDTreeSearchParamKNN(knn=k_neighbors))

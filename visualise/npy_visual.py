@@ -2,25 +2,26 @@ import numpy as np
 import matplotlib.pyplot as plt
 import re
 
-# Replace this with your actual file path
-file_path = r"D:\Mphil\Programming\EfficientPointMed\output\denoise_dev\slice_point_cloud_177.npy"
+for i in range(1,353):
+    # Replace this with your actual file path
+    file_path = rf"D:\Mphil\Programming\EfficientPointMed\output\3d\pc_test_slice\array\edges_2d_{i}.npy"
 
-# Load the array from the .npy file
-arr = np.load(file_path)
+    # Load the array from the .npy file
+    arr = np.load(file_path)
 
-# Print the array
-print(arr.shape)
+    # Print the array
+    print(arr.shape)
 
-# match = re.search(r"_(\d+)\.npy$", file_path)
-# if match:
-#     idx = int(match.group(1))
-#     print("Extracted idx:", idx)
-# else:
-#     print("No index found in path.")
+    # match = re.search(r"_(\d+)\.npy$", file_path)
+    # if match:
+    #     idx = int(match.group(1))
+    #     print("Extracted idx:", idx)
+    # else:
+    #     print("No index found in path.")
 
-# Save the 2D array as an image
-# plt.imsave(rf'D:\Mphil\Programming\EfficientPointMed\output\3d\pc_test_slice\img\slice_{idx}.png', arr, cmap='gray')
-plt.imsave(rf'D:\Mphil\Programming\EfficientPointMed\output\denoise_dev\slice_point_cloud_177.png', arr, cmap='gray')
+    # Save the 2D array as an image
+    # plt.imsave(rf'D:\Mphil\Programming\EfficientPointMed\output\3d\pc_test_slice\img\slice_{idx}.png', arr, cmap='gray')
+    plt.imsave(rf'D:\Mphil\Programming\EfficientPointMed\output\3d\pc_test_slice\img\edges_2d_{i}.png', arr, cmap='gray')
 
 # num_slices = arr.shape[1]
 # slice_indices = [0, num_slices // 2, num_slices - 1]

@@ -4,6 +4,7 @@ import numpy as np
 import cv2
 from math import ceil
 
+
 def gaussian_kernel1d(sigma: float, radius: int | None = None) -> np.ndarray:
     if sigma <= 0:
         raise ValueError("sigma must be > 0")

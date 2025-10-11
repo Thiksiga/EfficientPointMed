@@ -4,7 +4,7 @@ import open3d as o3d
 # -------------------
 # Config
 # -------------------
-file_path = r"D:\Mphil\Programming\EfficientPointMed\output\3d\3d\pointcloud_sampled_8.npy"
+file_path = r"D:\Mphil\Programming\EfficientPointMed\output\3d\3d\point_cloud_3d_13.npy"
 point_size = 3.0                 # thicker points to be visible immediately
 bin_size = 1.0                   # thickness of a Z slice
 min_points_per_slice = 1         # show even tiny slices

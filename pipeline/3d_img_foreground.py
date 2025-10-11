@@ -218,6 +218,8 @@ def three_d_denoising(cbct_path: str, mask_path: str, pointcloud_save_path: str,
         mask_path (str): Path to the 3D mask .npy file.
         pointcloud_save_path (str): Path to save the full sampled 3D point cloud (.npy).
         hu_min (int, optional): Minimum Hounsfield value for scaling. Default is -1000.
+
+
         hu_max (int, optional): Maximum Hounsfield value for scaling. Default is 3000.
         lower_threshold_mask (int, optional): Threshold for mask extraction. Default is 170.
         low_threshold (int, optional): Lower threshold for edge detection. Default is 0.
@@ -242,6 +244,8 @@ def three_d_denoising(cbct_path: str, mask_path: str, pointcloud_save_path: str,
 
     masked_slices = []
     sampled_point_cloud_3d = []
+    point_cloud_3d = []
+    point_cloud_3d_parts = []
 
     for slice_index in range(num_slices):
         logger.info(f"Processing slice {slice_index+1}/{num_slices}")
@@ -254,6 +258,7 @@ def three_d_denoising(cbct_path: str, mask_path: str, pointcloud_save_path: str,
         denoised_log = Denoise.denoise_log_transformed_image(log_transformed)
         logger.info(f"Denoised log-transformed image for slice {slice_index+1}")
         inv_log = Denoise.inverse_log_transform(denoised_log, original_min, eps)
+        np.save(f"../output/3d/pc_test_slice/slices_2/denoised_{slice_index + 1}.npy", inv_log)
         logger.info(f"Inverse log transform applied to slice {slice_index+1}")
         # denoised_img_uint8 = Denoise.apply_window(inv_log, window_center=40, window_width=400)
         # logger.info(f"Applied windowing to slice {slice_index+1}")
@@ -284,6 +289,7 @@ def three_d_denoising(cbct_path: str, mask_path: str, pointcloud_save_path: str,
         masked_img = cv2.bitwise_and(slice_2d_uint8, slice_2d_uint8, mask=mask_cv)
         logger.info(f"Applied mask to denoised image for slice {slice_index+1}")
         edges_2d = Denoise.prewitt_2d(masked_img)
+        np.save(f"../output/3d/pc_test_slice/array/edges_2d_{slice_index+1}.npy", edges_2d)
         edge_mask = edges_2d > high_threshold
         edge_points = np.argwhere(edge_mask)  # Each row: [x, y]
 
@@ -295,7 +301,15 @@ def three_d_denoising(cbct_path: str, mask_path: str, pointcloud_save_path: str,
             slice_point_cloud.append((x, y, slice_index, grad, label))
 
         num_points = len(slice_point_cloud)
+        # print(np.shape(slice_point_cloud))
+        # point_cloud_3d.append(slice_point_cloud)
         logger.info(f"Number of edge points in slice {slice_index+1}: {num_points}")
+
+        if slice_point_cloud:  # skip empty slices
+            arr = np.asarray(slice_point_cloud, dtype=np.float32)  # (Ni,5)
+            point_cloud_3d_parts.append(arr)
+            logger.info("slice %d points: %d", slice_index + 1, arr.shape[0])
+
 
         # Perform slice-wise sampling
         if num_points > 0:
@@ -336,19 +350,27 @@ def three_d_denoising(cbct_path: str, mask_path: str, pointcloud_save_path: str,
         np.save(pointcloud_save_path, sampled_point_cloud_3d)
         logger.info(f"Saved sampled 3D point cloud to {pointcloud_save_path}")
 
+    # Final flat (N,5)
+    pc3d = np.vstack(point_cloud_3d_parts) if point_cloud_3d_parts else np.empty((0, 5), np.float32)
+    logger.info("3D point cloud total points: %d", pc3d.shape[0])
+
+    np.save(f"../output/3d/3d/point_cloud_3d_15.npy", pc3d)
+
     return denoised_3d, mask_3d, sampled_point_cloud_3d
 
 if __name__ == "__main__":
     denoised_3d, mask_3d, point_cloud_3d = three_d_denoising(
         cbct_path=r"D:\Mphil\Programming\2DtoPointcloud_v2\dataset\P1-20250324T100522Z-001\P1\data.npy",
         mask_path=r"D:\Mphil\Programming\2DtoPointcloud_v2\dataset\P1-20250324T100522Z-001\P1\gt_alpha.npy",
-        pointcloud_save_path=r"D:\Mphil\Programming\EfficientPointMed\output\3d\3d\pointcloud_sampled_12.npy", lower_threshold_mask= 1000
+        pointcloud_save_path=r"D:\Mphil\Programming\EfficientPointMed\output\3d\3d\pointcloud_sampled_15.npy", lower_threshold_mask= 300
     )
    
     # # Save the selected slices (or the entire denoised_img if that's what you want)
     # np.save(r"D:\Mphil\Programming\EfficientPointMed\output\selected_denoised_3d.npy", denoised_img)
 
-    # denoised_img = np.load(r"D:\Mphil\Programming\EfficientPointMed\output\selected_denoised_3d.npy")
+    # denoised_img = np.load(r"D:\Mphil\Progra
+    #
+    # mming\EfficientPointMed\output\selected_denoised_3d.npy")
     # mask_3d = np.load(r"D:\Mphil\Programming\2DtoPointcloud_v2\dataset\P1-20250324T100522Z-001\P1\gt_alpha.npy")
 
     # pointcloud_formulation_3d(denoised_img, mask_3d, r"D:\Mphil\Programming\EfficientPointMed\output\3d\3d\pointcloud_sampled.npy", r"D:\Mphil\Programming\EfficientPointMed\output\3d\3d\pointcloud_npy.npy")
