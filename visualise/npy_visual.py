@@ -4,7 +4,7 @@ import re
 
 for i in range(1,353):
     # Replace this with your actual file path
-    file_path = rf"D:\Mphil\Programming\EfficientPointMed\output\3d\pc_test_slice\array\edges_2d_{i}.npy"
+    file_path = rf"D:\Mphil\Programming\EfficientPointMed\output\3d\pc_test_slice\sampled_points_slice\sampled_points_slice_{i}.npy"
 
     # Load the array from the .npy file
     arr = np.load(file_path)
@@ -21,7 +21,7 @@ for i in range(1,353):
 
     # Save the 2D array as an image
     # plt.imsave(rf'D:\Mphil\Programming\EfficientPointMed\output\3d\pc_test_slice\img\slice_{idx}.png', arr, cmap='gray')
-    plt.imsave(rf'D:\Mphil\Programming\EfficientPointMed\output\3d\pc_test_slice\img\edges_2d_{i}.png', arr, cmap='gray')
+    plt.imsave(rf'D:\Mphil\Programming\EfficientPointMed\output\3d\pc_test_slice\sampled_points_slice_img\sampled_points_slice_{i}.png', arr, cmap='gray')
 
 # num_slices = arr.shape[1]
 # slice_indices = [0, num_slices // 2, num_slices - 1]
