@@ -1,0 +1,5 @@
+myenv310/
+dataset/
+output/
+__pycache__/ 
+.idea/
