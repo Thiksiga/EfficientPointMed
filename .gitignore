@@ -3,3 +3,5 @@ dataset/
 output/
 __pycache__/ 
 .idea/
+P1/
+venv/
