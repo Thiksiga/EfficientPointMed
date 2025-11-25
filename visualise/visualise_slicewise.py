@@ -4,7 +4,7 @@ import open3d as o3d
 # -------------------
 # Config
 # -------------------
-file_path = r"D:\Mphil\Programming\EfficientPointMed\output\3d\3d\pointcloud_sampled_15.npy"
+file_path = r"D:\Mphil\Programming\EfficientPointMed\output\3d\3d\pointcloud_sampled_19_kn5.npy"
 point_size = 3.0                 # thicker points to be visible immediately
 bin_size = 1.0                   # thickness of a Z slice
 min_points_per_slice = 1         # show even tiny slices
@@ -107,6 +107,7 @@ if __name__ == "__main__":
         fit_camera_to(vis, pcd, zoom=0.35)
         vis.poll_events()
         vis.update_renderer()
+
         print(f"Slice {idx+1}/{len(slices)} | Z≈{centers[idx]:.3f} | points={len(pts)} | recentered={state['recenter']}")
 
     # Key callbacks

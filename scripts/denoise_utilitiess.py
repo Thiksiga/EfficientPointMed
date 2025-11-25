@@ -21,10 +21,15 @@ import matplotlib.pyplot as plt
 class BasicPointCloud:
     def __init__(self, points, colors=None, normals=None):
         self.points = points
+        N = points.shape[0]
         # self.gradients = gradients
         # self.labels = labels
         self.colors = colors if colors is not None else np.zeros_like(points)
         self.normals = normals if normals is not None else np.zeros_like(points)
+        # self.gradients = gradients if gradients is not None else np.zeros((N, 1), np.float32)
+        # self.labels = labels if labels is not None else np.full((N,), -1, np.int32)
+        # self.colors = colors if colors is not None else np.zeros((N, 3), points.dtype)
+        # self.normals = normals if normals is not None else np.zeros((N, 3), points.dtype)
 
 class Denoise:
     """
@@ -370,6 +375,7 @@ class Denoise:
         img_windowed = np.clip(img, min_val, max_val)
         img_norm = ((img_windowed - min_val) / (max_val - min_val) * 255).astype(np.uint8)
         return img_norm
+
     @staticmethod
     def contour_to_filled_mask(contour, shape, fill_value=1):
         """
@@ -476,17 +482,21 @@ class Denoise:
     def curvature_preserving_sampling(point_cloud: BasicPointCloud, k_neighbors=20, fraction=0.5):
         o3d_cloud = o3d.geometry.PointCloud()
         o3d_cloud.points = o3d.utility.Vector3dVector(point_cloud.points)
-        o3d_cloud.estimate_normals(search_param=o3d.geometry.KDTreeSearchParamKNN(knn=k_neighbors))
+        # o3d_cloud.estimate_normals(search_param=o3d.geometry.KDTreeSearchParamKNN(knn=k_neighbors))
         curvatures = []
         kdtree = o3d.geometry.KDTreeFlann(o3d_cloud)
         for i in range(len(point_cloud.points)):
             _, idx, _ = kdtree.search_knn_vector_3d(o3d_cloud.points[i], k_neighbors)
             neighbors = np.asarray(o3d_cloud.points)[idx]
+            # print(f"idx of {i}",idx)
             cov = np.cov(neighbors, rowvar=False)
             eigenvalues, _ = np.linalg.eigh(cov)
             curvature = eigenvalues[0] / sum(eigenvalues)
             curvatures.append(curvature)
         sorted_indices = np.argsort(curvatures)[::-1]
+        # print(f"sorted indices of curvatures: ", len(sorted_indices))
+        # print(f"sorted indices of curvatures: ", sorted_indices)
+        # print(f"curvatures: {curvatures[sorted_indices]}")
         num_samples = int(len(point_cloud.points) * fraction)
         selected_indices = sorted_indices[:num_samples]
         return BasicPointCloud(points=point_cloud.points[selected_indices],
@@ -497,7 +507,7 @@ class Denoise:
     def curvature_preserving_sampling_2(point_cloud: BasicPointCloud, k_neighbors=20, fraction=0.2):
         o3d_cloud = o3d.geometry.PointCloud()
         o3d_cloud.points = o3d.utility.Vector3dVector(point_cloud.points)
-        o3d_cloud.estimate_normals(search_param=o3d.geometry.KDTreeSearchParamKNN(knn=k_neighbors))
+        # o3d_cloud.estimate_normals(search_param=o3d.geometry.KDTreeSearchParamKNN(knn=k_neighbors))
         curvatures = []
         kdtree = o3d.geometry.KDTreeFlann(o3d_cloud)
         for i in range(len(point_cloud.points)):
@@ -510,17 +520,7 @@ class Denoise:
         sorted_indices = np.argsort(curvatures)[::-1]
         num_samples = int(len(point_cloud.points) * fraction)
         selected_indices = sorted_indices[:num_samples]
-        return BasicPointCloud(points=point_cloud.points[selected_indices],
-                               labels=point_cloud.labels[selected_indices],
-                               gradients=point_cloud.gradients[selected_indices],
-                               colors=point_cloud.colors[selected_indices],
-                               normals=point_cloud.normals[selected_indices]), selected_indices
-
-
-
-    
-
-
+        return BasicPointCloud(points=point_cloud.points[selected_indices], labels=point_cloud.labels[selected_indices], gradients=point_cloud.gradients[selected_indices], colors=point_cloud.colors[selected_indices], normals=point_cloud.normals[selected_indices]), selected_indices
 
 
 # Template for a custom Non-Local Means implementation (currently commented out)

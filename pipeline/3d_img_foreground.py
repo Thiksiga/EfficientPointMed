@@ -337,7 +337,7 @@ def three_d_denoising(cbct_path: str, mask_path: str, pointcloud_save_path: str,
             sampled_grads = grads[selected_indices]
             sampled_labels = labels[selected_indices]
             sampled_points_slice = np.column_stack((sampled_points, sampled_grads, sampled_labels))
-            np.save(f"../output/3d/pc_test_slice/sampled_points_slice/sampled_points_slice_{slice_index + 1}.npy", sampled_points_slice)
+            np.save(f"../output/3d/pc_test_slice/sampled_points_slice_xyz/sampled_points_slice_{slice_index + 1}.npy", sampled_points_slice)
             sampled_point_cloud_3d.append(sampled_points_slice)
 
         masked_slices.append(masked_img)
@@ -361,7 +361,7 @@ def three_d_denoising(cbct_path: str, mask_path: str, pointcloud_save_path: str,
     pc3d = np.vstack(point_cloud_3d_parts) if point_cloud_3d_parts else np.empty((0, 5), np.float32)
     logger.info("3D point cloud total points: %d", pc3d.shape[0])
 
-    np.save(f"../output/3d/3d/point_cloud_3d_17.npy", pc3d)
+    np.save(f"../output/3d/3d/point_cloud_3d_20.npy", pc3d)
 
     return denoised_3d, mask_3d, sampled_point_cloud_3d
 
@@ -369,7 +369,7 @@ if __name__ == "__main__":
     denoised_3d, mask_3d, point_cloud_3d = three_d_denoising(
         cbct_path=r"D:\Mphil\Programming\2DtoPointcloud_v2\dataset\P1-20250324T100522Z-001\P1\data.npy",
         mask_path=r"D:\Mphil\Programming\2DtoPointcloud_v2\dataset\P1-20250324T100522Z-001\P1\gt_alpha.npy",
-        pointcloud_save_path=r"D:\Mphil\Programming\EfficientPointMed\output\3d\3d\pointcloud_sampled_17_kn2.npy", lower_threshold_mask= 300, k_neighbors= 3)
+        pointcloud_save_path=r"D:\Mphil\Programming\EfficientPointMed\output\3d\3d\pointcloud_sampled_20_kn5.npy", lower_threshold_mask= 300, k_neighbors= 5, sampling_fraction= 0.5)
    
     # # Save the selected slices (or the entire denoised_img)
     # np.save(r"D:\Mphil\Programming\EfficientPointMed\output\selected_denoised_3d.npy", denoised_img)

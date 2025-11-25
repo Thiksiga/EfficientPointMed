@@ -294,7 +294,7 @@ from matplotlib import cm, colors as mcolors
 # -------------------
 # Config
 # -------------------
-file_path = r"D:\Mphil\Programming\EfficientPointMed\output\3d\3d\pointcloud_sampled_17_kn2.npy"
+file_path = r"D:\Mphil\Programming\EfficientPointMed\output\3d\3d\pointcloud_sampled_20_kn5.npy"
 point_size = 3.0                 # Open3D point size
 bin_size = 1.0                   # thickness of a Z slice
 min_points_per_slice = 1         # show even tiny slices
@@ -310,7 +310,7 @@ manual_vmin = None               # set floats to force fixed scale
 manual_vmax = None
 
 # --- PNG saving ---
-png_dir = r"../output/3d/pc_test_slice/sampled_points_slice_labled_kn2_img"
+png_dir = r"../output/3d/pc_test_slice/sampled_points_slice_labled_20_kn5_img"
 auto_save_png = True
 figsize = (6, 6)
 dpi = 200

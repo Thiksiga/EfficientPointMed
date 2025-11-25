@@ -93,7 +93,7 @@ def to_xyz(arr: np.ndarray) -> np.ndarray:
     return xyz.astype(np.float64, copy=False)
 
 if __name__ == "__main__":
-    file_path = r"D:\Mphil\Programming\EfficientPointMed\output\3d\3d\pointcloud_sampled_16.npy"
+    file_path = r"D:\Mphil\Programming\EfficientPointMed\output\3d\3d\point_cloud_3d_20.npy"
     # file_path = r"D:\Mphil\Programming\EfficientPointMed\output\3d\3d\point_cloud_3d_14.npy"
     # file_path = r"D:\Mphil\Programming\EfficientPointMed\output\3d\3d\pointcloud_sampled_4_cpnus_on_3d.npy"
     # file_path = r"D:\Mphil\Programming\EfficientPointMed\output\3d\3d\pointcloud_sampled_4_cpnus0_2_on_3d.npy"

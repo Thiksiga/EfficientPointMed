@@ -206,14 +206,14 @@ import matplotlib.pyplot as plt
 # -------------------
 # Config
 # -------------------
-file_path = r"D:\Mphil\Programming\EfficientPointMed\output\3d\3d\point_cloud_3d_16.npy"
+file_path = r"D:\Mphil\Programming\EfficientPointMed\output\3d\3d\pointcloud_sampled_18_kn2.npy"
 point_size = 3.0                 # Open3D point size
 bin_size = 1.0                   # thickness of a Z slice
 min_points_per_slice = 1         # show even tiny slices
 recenter_geometry = True         # recenter each slice for VIEWING only
 
 # --- PNG saving (as requested) ---
-png_dir = r"../output/3d/pc_test_slice/pointcloud_unsampled_img_16"
+png_dir = r"../output/3d/pc_test_slice/pointcloud_unsampled_img_18_kn2"
 auto_save_png = True
 figsize = (6, 6)                 # inches
 dpi = 200
