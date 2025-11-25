@@ -1,7 +1,0 @@
-numpy
-scipy
-opencv-python
-matplotlib
-PyWavelets
-numba
-open3d 
