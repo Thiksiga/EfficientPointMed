@@ -1,0 +1,28 @@
+{
+    "input_path": "D:\\Mphil\\Dataset\\P50\\data.npy",
+    "output_dir": "D:\\Mphil\\Programming\\EfficientPointMed\\output_3d_denoise\\wavelet\\p50",
+    "wavelet": "db4",
+    "level_used": 3,
+    "mode": "symmetric",
+    "bins": 1000,
+    "clip_min": null,
+    "clip_max": null,
+    "save_coeffs": false,
+    "use_abs_for_hist": false,
+    "volume_shape": [
+        170,
+        371,
+        462
+    ],
+    "volume_dtype": "float32",
+    "original_min": -1000.0,
+    "original_max": 3096.0,
+    "original_mean": -77.85033416748047,
+    "original_std": 526.3672485351562,
+    "postprocess_min": -1000.0,
+    "postprocess_max": 3096.0,
+    "postprocess_mean": -77.85033416748047,
+    "postprocess_std": 526.3672485351562,
+    "spacing": null,
+    "source_type": "npy"
+}
