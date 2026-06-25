@@ -1,8 +1,9 @@
 import numpy as np
 import cv2
 
-img = np.load(r"D:\Mphil\Programming\EfficientPointMed\dataset\P20\data.npy")
-slice_no = 255
+
+img = np.load(r"./dataset/P20/data.npy")
+slice_no = 86
 num_frames = 5  # successive frames
 
 img_display = cv2.normalize(
@@ -45,7 +46,7 @@ for i in range(num_frames):
     else:
         print(f"Warning: slice {slice_idx} out of bounds, leaving zeros")
 
-out_path = rf"D:\Mphil\Dataset_overview\P20_stats\air_{slice_no}_3d.npy"
+out_path = rf"./Results/P20/Slices/Air/air_{slice_no}_3d.npy"
 np.save(out_path, roi_block)
 print(f"Saved 3D block: {roi_block.shape} -> {out_path}")
 

@@ -3,3 +3,6 @@ dataset/
 output/
 __pycache__/ 
 .idea/
+data/
+results/
+Test_results/

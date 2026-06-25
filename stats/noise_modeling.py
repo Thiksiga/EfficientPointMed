@@ -197,7 +197,7 @@ def plot_pdf_comparison(P, Q, bin_edges, filename):
 def main():
 
     # Parameters
-    path = r"D:\Mphil\Dataset_overview\P50_stats\bony_115_3d.npy"
+    path = r"./Results/P10/Slices/air_52_3d.npy"
     noise_shape = (5, 10, 10)
     a = 1      # Control factor of poisson noise
     b = 0.01    # Control factor of uniform noise
