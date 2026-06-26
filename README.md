@@ -15,3 +15,6 @@ This will process the CBCT and mask data as configured in the script, apply deno
 ---
 
 For more details on usage or contributing, please refer to the code and docstrings in each module. 
+
+## Noise Modeling
+ 

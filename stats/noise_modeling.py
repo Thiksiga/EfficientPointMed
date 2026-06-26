@@ -100,7 +100,9 @@ def transform_and_rescale(combined_noise, u_b, l_b):
         f"std: {np.std(combined_log)}"
     )
 
-    rescaled = (((u_b - combined_log) / (1)))
+    # rescaled = (((u_b - combined_log) / (1)))
+
+    rescaled = combined_noise
     rescaled_offset = (rescaled - np.min(rescaled))
 
     rescaled_offset_final = (
@@ -197,13 +199,21 @@ def plot_pdf_comparison(P, Q, bin_edges, filename):
 def main():
 
     # Parameters
-    path = r"D:\Mphil\Dataset_overview\P50_stats\bony_115_3d.npy"
+    # path = r"D:\Mphil\Dataset_overview\P50_stats\bony_115_3d.npy"
+    path = r"D:\Mphil\Dataset_overview\P20_stats\air_225_3d.npy"
+    # path = r"D:\Mphil\Dataset_overview\P20_stats\bony_115_3d.npy"
+    # path = r"D:\Mphil\Dataset_overview\P20_stats\soft_tissue_200_3d.npy"
+    # path = r"D:\Mphil\Dataset\P10\data.npy"
     noise_shape = (5, 10, 10)
     a = 1      # Control factor of poisson noise
-    b = 0.01    # Control factor of uniform noise
+    b = 0.001    # Control factor of uniform noise
 
     img, filename = load_image(path)
+    print(f"Image max: {np.max(img):.2f}")
+    print(f"Image min: {np.min(img):.2f}")
     img_offset = normalize_image(img)
+    print(f"Image offset min: {np.min(img_offset):.2f}")
+    print(f"Image offset max: {np.max(img_offset):.2f}")
 
     distribution_sorted, mean, l_b, u_b = \
         build_custom_poisson_distribution(img_offset)

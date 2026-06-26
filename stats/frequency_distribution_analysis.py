@@ -1,7 +1,7 @@
 import numpy as np
-# import matplotlib.pyplot as plt
-#
-# load CBCT volume
+import matplotlib.pyplot as plt
+
+# # load CBCT volume
 # img = np.load(r"D:\Mphil\Dataset_overview\P50_stats\bony_200_3d.npy")
 #
 # # select a slice
@@ -30,34 +30,34 @@ import numpy as np
 #
 # plt.show()
 
-# ###--------Radial power spectrum------------------
-# import numpy as np
-# import matplotlib.pyplot as plt
-#
-# slice_img = img[img.shape[0]//2]
-#
-# f = np.fft.fft2(slice_img)
-# fshift = np.fft.fftshift(f)
-#
-# power = np.abs(fshift)**2
-#
-# h, w = power.shape
-# center = (h//2, w//2)
-#
-# y, x = np.indices((h, w))
-# r = np.sqrt((x-center[1])**2 + (y-center[0])**2)
-# r = r.astype(np.int32)
-#
-# tbin = np.bincount(r.ravel(), power.ravel())
-# nr = np.bincount(r.ravel())
-#
-# radial_profile = tbin / nr
-#
-# plt.plot(radial_profile)
-# plt.title("Radial Frequency Distribution")
-# plt.xlabel("Frequency radius")
-# plt.ylabel("Power")
-# plt.show()
+###--------Radial power spectrum------------------
+import numpy as np
+import matplotlib.pyplot as plt
+
+slice_img = img[img.shape[0]//2]
+
+f = np.fft.fft2(slice_img)
+fshift = np.fft.fftshift(f)
+
+power = np.abs(fshift)**2
+
+h, w = power.shape
+center = (h//2, w//2)
+
+y, x = np.indices((h, w))
+r = np.sqrt((x-center[1])**2 + (y-center[0])**2)
+r = r.astype(np.int32)
+
+tbin = np.bincount(r.ravel(), power.ravel())
+nr = np.bincount(r.ravel())
+
+radial_profile = tbin / nr
+
+plt.plot(radial_profile)
+plt.title("Radial Frequency Distribution")
+plt.xlabel("Frequency radius")
+plt.ylabel("Power")
+plt.show()
 
 ###--------Wavelet analysis----------------
 """

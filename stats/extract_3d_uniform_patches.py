@@ -1,7 +1,7 @@
 import numpy as np
 import cv2
 
-img = np.load(r"D:\Mphil\Programming\EfficientPointMed\dataset\P20\data.npy")
+img = np.load(r"D:\Mphil\Programming\EfficientPointMed\dataset\P50\data.npy")
 slice_no = 255
 num_frames = 5  # successive frames
 
