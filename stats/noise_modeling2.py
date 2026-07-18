@@ -605,7 +605,6 @@ import os
 import random
 import numpy as np
 import matplotlib.pyplot as plt
-from scipy.special import factorial
 
 
 # ============================================================
@@ -630,14 +629,11 @@ def load_image(path):
 
 def normalize_image(img):
     """
-    Shift and normalize image to [0, 100].
+    Fixed normalization: shift by +1001, scale to [0, 100] using the
+    full CBCT range (6264 HU) so that hu_bin_width maps consistently
+    across all patches and volumes.
     """
-    img_shifted = img + 1001
-
-    img_offset = (
-        (img_shifted - np.min(img_shifted)) * 100
-        / (np.max(img_shifted) - np.min(img_shifted))
-    )
+    img_offset = (img + 1001) * 100 / 6264
 
     print(f"Normalized image shape: {img_offset.shape}")
     print(
@@ -653,24 +649,28 @@ def normalize_image(img):
 # OVERLAPPING POISSON DISTRIBUTION
 # ============================================================
 
+CBCT_FULL_RANGE = 6264  # fixed: 5263 - (-1001)
+
+
 def build_overlapping_range_poisson_distribution(
     img_offset,
     hu_bin_width=100,
     overlap_ratio=0.25,
-    original_range=6264,
+    original_range=None,
     normalized_range=100
 ):
     """
     Build merged Poisson distribution over overlapping intensity ranges.
 
     hu_bin_width is given in original HU/intensity scale.
-    It is converted to normalized image scale internally.
+    It is converted to normalized image scale using the fixed
+    CBCT_FULL_RANGE (6264) since normalize_image now uses fixed scaling.
 
     Example:
-        100 HU -> 100 * 100 / original_range normalized units.
+        100 HU -> 100 * 100 / 6264 normalized units.
     """
 
-    bin_width = hu_bin_width * normalized_range / original_range
+    bin_width = hu_bin_width * normalized_range / CBCT_FULL_RANGE
 
     l_b = np.min(img_offset)
     u_b = np.max(img_offset)
@@ -682,7 +682,7 @@ def build_overlapping_range_poisson_distribution(
     print("\n====== Overlapping Poisson Distribution Construction ======")
     print(f"Image intensity range normalized: {l_b:.4f} to {u_b:.4f}")
     print(f"Global mean normalized: {global_mean:.4f}")
-    print(f"Original image range: {original_range:.4f}")
+    print(f"CBCT full range: {CBCT_FULL_RANGE}")
     print(f"HU bin width: {hu_bin_width}")
     print(f"Scaled bin width: {bin_width:.4f}")
     print(f"Overlap ratio: {overlap_ratio}")
@@ -713,12 +713,17 @@ def build_overlapping_range_poisson_distribution(
             f"mean: {region_mean:.4f}"
         )
 
-        # Keep original Poisson formula unchanged
+        region_std = np.std(region_pixels)
+        if region_std < 1e-8:
+            region_std = 1e-8
+
         for bi in region_pixels:
-            probability_bi = (
-                (region_mean ** bi) *
-                np.exp(-region_mean)
-            ) / factorial(bi)
+            log_prob = (
+                -0.5 * ((bi - region_mean) / region_std) ** 2
+                - np.log(region_std)
+                - 0.5 * np.log(2 * np.pi)
+            )
+            probability_bi = np.exp(log_prob)
 
             if bi in merged_distribution:
                 merged_distribution[bi] += probability_bi
@@ -801,12 +806,12 @@ def transform_and_rescale(combined_noise, u_b, l_b):
         f"std: {np.std(combined_log):.4f}"
     )
 
-    rescaled = combined_noise
+    rescaled = combined_log
 
     rescaled_offset = rescaled - np.min(rescaled)
     denominator = np.max(rescaled_offset) - np.min(rescaled_offset)
 
-    if denominator == 0:
+    if denominator < 1e-12:
         raise ValueError("Cannot rescale: combined noise has constant value.")
 
     rescaled_offset_final = (
@@ -814,7 +819,7 @@ def transform_and_rescale(combined_noise, u_b, l_b):
         ((u_b - l_b) / denominator)
     ) + l_b
 
-    return combined_log, rescaled, rescaled_offset_final
+    return combined_log, combined_noise, rescaled_offset_final
 
 
 # ============================================================
@@ -938,9 +943,6 @@ def main():
 
     img, filename = load_image(path)
 
-    original_range = np.max(img) - np.min(img)
-    print(f"Original image range: {original_range:.4f}")
-
     img_offset = normalize_image(img)
 
     # Use full image shape to avoid small-sample distribution offset
@@ -951,7 +953,6 @@ def main():
             img_offset,
             hu_bin_width=hu_bin_width,
             overlap_ratio=overlap_ratio,
-            original_range=original_range
         )
     )
 

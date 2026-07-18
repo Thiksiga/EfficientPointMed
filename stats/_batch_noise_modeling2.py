@@ -74,7 +74,6 @@ def process_slice(slice_path: Path, output_dir: Path, a=1.0, b=0.01,
 
     img, filename = load_image(str(slice_path))
 
-    original_range = np.max(img) - np.min(img)
     img_offset = normalize_image(img)
 
     noise_shape = img_offset.shape
@@ -84,7 +83,6 @@ def process_slice(slice_path: Path, output_dir: Path, a=1.0, b=0.01,
             img_offset,
             hu_bin_width=hu_bin_width,
             overlap_ratio=overlap_ratio,
-            original_range=original_range
         )
     )
 
